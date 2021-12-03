@@ -30,34 +30,15 @@ public class Origin extends Point{
         this.children_ = children_;
     }
 
-    private void findAnyValidBoundPoint() throws EmptyBoundBoxException {
-        if (this.children_.size() == 0) {
-            throw new EmptyBoundBoxException();
-        }
-        int index = 0;
-        for (Point point : children_) {
-            if (point.getClass() != Origin.class) {
-                bounds_.topRightCoord_ = point.bounds_.topRightCoord_;
-                bounds_.bottomLeftCoord_ = point.bounds_.bottomLeftCoord_;
-                return;
-            }
-            ++index;
-            if (index == children_.size()) {
-                ((Origin)point).findAnyValidBoundPoint();
-            }
-        }
-
-    }
-
 
     // Every time getBounds is called bounds_ is actually updated.
     // At other times it might be incorrect.
     public BoundBox getBounds() throws EmptyBoundBoxException {
         if (children_.size() == 0) {
-            throw new EmptyBoundBoxException(this);
+            return null;
         }
 
-        bounds_.updateCoordinates(this);
+        bounds_ = BoundBox.updateBoundBox(this);
         return bounds_;
     }
 

@@ -2,93 +2,59 @@ package DAGLibrary;
 
 import java.util.Set;
 
+/**
+ * Immutable value type instance, representing the coordinates of the diagonal of
+ * rectangle that covers all the boundboxes of children (in origin case) or
+ * is equal to the coords of the point itself (point case)
+ */
 public class BoundBox {
-    Coord2D topRightCoord_;
-    Coord2D bottomLeftCoord_;
+    final Coord2D topRightCoord_;
+    final Coord2D bottomLeftCoord_;
 
-    BoundBox( Coord2D bottomLeftCoords, Coord2D topRightCoords) {
+    public BoundBox(Coord2D bottomLeftCoords, Coord2D topRightCoords) {
         bottomLeftCoord_ = bottomLeftCoords;
         topRightCoord_ = topRightCoords;
     }
 
-    public void  updateCoordinates(Origin origin) throws EmptyBoundBoxException {
-        if (origin.getChildren_() == null || origin.getChildren_().size() == 0) {
-            throw new EmptyBoundBoxException();
-        }
-        // That is done so that the coordinates of the previous bound box get erased.
-        origin.bounds_.bottomLeftCoord_ = null;
-        origin.bounds_.topRightCoord_ = null;
-
-        for (Point point : origin.getChildren_()) {
-            if (point.getClass() == Origin.class) {
-                BoundBox child_origin_bound = countShiftedBoundBox((Origin)point);
-                child_origin_bound = child_origin_bound.unite(origin.bounds_);
-                origin.bounds_.topRightCoord_ = child_origin_bound.topRightCoord_;
-                origin.bounds_.bottomLeftCoord_ = child_origin_bound.bottomLeftCoord_;
-            } else {
-                updateCoordinates(point);
-            }
-        }
+    public Coord2D getTopRightCoord_() {
+        return topRightCoord_;
     }
 
-    private BoundBox countShiftedBoundBox(Origin origin) throws EmptyBoundBoxException {
-        if (origin.getChildren_() == null || origin.getChildren_().size() == 0) {
-            throw new EmptyBoundBoxException();
-        }
-        Coord2D shift = origin.getPosition();
-        BoundBox result = null;
-
-        // Adding all children points and origins to the BoundBox.
-        for (Point point : origin.getChildren_()) {
-            BoundBox tempBox = null;
-            if (point.getClass() == Origin.class) {
-                tempBox = countShiftedBoundBox((Origin)point);
-                tempBox.topRightCoord_ = topRightCoord_.Shift(shift);
-                tempBox.bottomLeftCoord_ = bottomLeftCoord_.Shift(shift);
-                // !!! Check if tempBox != null. !!!
-                result = tempBox.unite(result);
-            } else {
-                tempBox = point.bounds_;
-                tempBox.topRightCoord_ = point.bounds_.topRightCoord_.Shift(shift);
-                tempBox.bottomLeftCoord_ = point.bounds_.bottomLeftCoord_.Shift(shift);
-                result = point.bounds_.unite(result);
-            }
-        }
-        return result;
+    public Coord2D getBottomLeftCoord_() {
+        return bottomLeftCoord_;
     }
+
     /**
-     * Update coordinates of the BoundBox and changes
-     * them if the given point exceeds existing boundaries.
+     * Method that counts the BoundBox for the given point and returns them
+     * as a new BoundBox instance.
+     * @param point Point whose bounds we are calculating
+     * @return new BoundBox that represents the bounds of the point
      */
-    public void updateCoordinates(Point point) throws EmptyBoundBoxException {
-        if (point == null) {
-            throw new NullPointerException();
+    protected static BoundBox updateBoundBox(Point point) {
+        if (point.getClass() != Origin.class) {
+            return new BoundBox(point.getPosition(), point.getPosition());
         }
+        // Assigning null coords to show that we have not yet found a fitting point
+        // to be added to the countedBox.
+        BoundBox countedBox = new BoundBox(null, null);
+        for (Point child: ((Origin) point).getChildren_()) {
+            if (child.getClass() != Origin.class) {
+                // There was no valid coordinate assigned to the childBox yet.
+                if (countedBox.bottomLeftCoord_ == null) {
+                    countedBox = updateBoundBox(child);
+                } else {
+                    countedBox = countedBox.unite(child.bounds_);
+                }
 
-        if (point.getClass() == Origin.class) {
-            updateCoordinates((Origin)point);
-        }
-        BoundBox result = point.bounds_.unite(this);
-        bottomLeftCoord_ = result.bottomLeftCoord_;
-        topRightCoord_ = result.topRightCoord_;
-    }
-
-    public void resetCoordinates(Point point) {
-        this.bottomLeftCoord_ = point.position_;
-        this.topRightCoord_ = point.position_;
-    }
-
-
-    public void resetCoordinates(Set<Point> points) throws EmptyBoundBoxException {
-        if (points.size() == 0) {
-            throw new EmptyBoundBoxException();
-        }
-        for (Point point: points) {
-            if (point.getClass() == Origin.class) {
-
+            } else {
+                if (countedBox.bottomLeftCoord_ == null) {
+                    countedBox = (updateBoundBox(child)).shiftBox(child.position_);
+                } else {
+                    countedBox = countedBox.unite(updateBoundBox(child).shiftBox(child.position_));
+                }
             }
-            break;
         }
+        return countedBox;
     }
 
     /**
@@ -112,4 +78,28 @@ public class BoundBox {
         Coord2D newMax = new Coord2D(x_max, y_max);
         return new BoundBox(newMin, newMax);
     }
+
+
+    /**
+     * Shifts the coordinates of this BoundBox (the instance we are currently working with).
+     * @param shift the given shift (Coord2D)
+     * @return the new BoundBox with shifted coordinates
+     */
+    public BoundBox shiftBox(Coord2D shift) {
+        return new BoundBox(this.bottomLeftCoord_.shift(shift), this.topRightCoord_.shift(shift));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj.getClass() != BoundBox.class) {
+            return  false;
+        }
+        boolean topEqual = topRightCoord_.equals(((BoundBox) obj).getTopRightCoord_());
+        boolean bottomEqual = bottomLeftCoord_.equals(((BoundBox) obj).getBottomLeftCoord_());
+        return topEqual && bottomEqual;
+    }
+
 }

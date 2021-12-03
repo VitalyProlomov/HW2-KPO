@@ -6,6 +6,18 @@ import java.util.Set;
 public class Main {
 
     public static void main(String[] args) throws EmptyBoundBoxException {
+
+        Point p1 = new Point(new Coord2D(2,4));
+        Point p2 = new Point((new Coord2D(5.555, -12)));
+        Point p3 = new Point(new Coord2D(3,0));
+        Origin o1 = new Origin(new Coord2D(0,8.6));
+        HashSet<Point> children1 = new HashSet();
+        children1.add(p1);
+        children1.add(p2);
+        children1.add(p3);
+        o1.setChildren_(children1);
+        BoundBox bbb = o1.getBounds();
+        /*
         Coord2D c1 = new Coord2D(2,2);
         Coord2D c2 = new Coord2D(3, 3);
         Coord2D c3 = new Coord2D(0,0);
@@ -35,7 +47,8 @@ public class Main {
 
         children3.add(p4);
         o3.setChildren_(children3);
+        */
 
-        o1.getBounds();
+        System.out.println("PITBULL");
     }
 }

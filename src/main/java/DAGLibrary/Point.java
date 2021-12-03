@@ -5,7 +5,7 @@ package DAGLibrary;
  */
 public class Point {
     protected Coord2D position_;
-    protected final BoundBox bounds_;
+    protected BoundBox bounds_;
 
     public Point(Coord2D coordinates) {
         this.position_ = coordinates;
@@ -18,6 +18,6 @@ public class Point {
 
     public void setPosition(Coord2D coords) {
         position_ = coords;
-        bounds_.resetCoordinates(this);
+        bounds_ = new BoundBox(coords, coords);
     }
 }
